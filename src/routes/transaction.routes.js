@@ -5,6 +5,22 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const isForecast = req.query.forecast === 'true';
+    const companyId = req.query.companyId;
+    const fiscalYearId = req.query.fiscalYearId;
+
+    let params = [isForecast];
+    let whereClause = 't.is_forecast = $1';
+
+    if (companyId) {
+      params.push(companyId);
+      whereClause += ` AND t.company_id = $${params.length}`;
+    }
+
+    if (fiscalYearId) {
+      params.push(fiscalYearId);
+      whereClause += ` AND t.fiscal_year_id = $${params.length}`;
+    }
+
     const query = `
       SELECT t.*, 
              da.code as debit_account_code, 
@@ -14,10 +30,10 @@ router.get('/', async (req, res) => {
       FROM transactions t
       LEFT JOIN account da ON t.debit_account_id = da.id
       LEFT JOIN account ca ON t.credit_account_id = ca.id
-      WHERE t.is_forecast = $1
+      WHERE ${whereClause}
       ORDER BY t.date DESC
     `;
-    const result = await req.db.query(query, [isForecast]);
+    const result = await req.db.query(query, params);
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });

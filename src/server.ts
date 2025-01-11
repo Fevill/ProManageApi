@@ -4,18 +4,18 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 
 // Import routes
-const accountingRoutes = require('./routes/accounting.routes.js');
-const balanceRoutes = require('./routes/balance.routes.js');
-const bilanRoutes = require('./routes/bilan.routes.js');
-const companyRoutes = require('./routes/company.routes.js');
-const dashboardRoutes = require('./routes/dashboard.routes.js');
-const fiscalYearRoutes = require('./routes/fiscal-year.routes.js');
-const forecastRoutes = require('./routes/forecast.routes.js');
-const ledgerRoutes = require('./routes/ledger.routes.js');
-const profileRoutes = require('./routes/profile.routes.js');
-const projectRoutes = require('./routes/project.routes.js');
-const resultatRoutes = require('./routes/resultat.routes.js');
-const transactionRoutes = require('./routes/transaction.routes.js');
+import accountingRoutes from './routes/accounting.routes';
+import balanceRoutes from './routes/balance.routes';
+import bilanRoutes from './routes/bilan.routes';
+import companyRoutes from './routes/company.routes';
+import dashboardRoutes from './routes/dashboard.routes';
+import fiscalYearRoutes from './routes/fiscal-year.routes';
+import forecastRoutes from './routes/forecast.routes';
+import ledgerRoutes from './routes/ledger.routes';
+import profileRoutes from './routes/profile.routes';
+import projectRoutes from './routes/project.routes';
+import resultatRoutes from './routes/resultat.routes';
+import transactionRoutes from './routes/transaction.routes';
 
 dotenv.config();
 

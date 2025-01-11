@@ -1,22 +1,19 @@
-import express, { Request, Response, Router } from 'express';
-import { Pool, QueryResult } from 'pg';
-
-// Extend Express Request type to include db
-interface CustomRequest extends Request {
-  db: Pool;
-}
+import express, { Router } from 'express';
+import { ProfileController } from '../controllers/profile.controller';
 
 const router: Router = express.Router();
+const profileController = new ProfileController();
 
-// Get profile
-router.get('/', async (req: CustomRequest, res: Response) => {
-  try {
-    const result: QueryResult = await req.db.query('SELECT * FROM profiles');
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
-  }
-});
+// Get user profile
+router.get('/', (req, res) => profileController.getProfile(req, res));
 
-// Export the router
-export = router;
+// Update profile
+router.put('/', (req, res) => profileController.updateProfile(req, res));
+
+// Update password
+router.put('/password', (req, res) => profileController.updatePassword(req, res));
+
+// Update preferences
+router.put('/preferences', (req, res) => profileController.updatePreferences(req, res));
+
+export default router;

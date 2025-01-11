@@ -1,22 +1,19 @@
-import express, { Request, Response, Router } from 'express';
-import { Pool, QueryResult } from 'pg';
-
-// Extend Express Request type to include db
-interface CustomRequest extends Request {
-  db: Pool;
-}
+import express, { Router } from 'express';
+import { LedgerController } from '../controllers/ledger.controller';
 
 const router: Router = express.Router();
+const ledgerController = new LedgerController();
 
-// Get ledger entries
-router.get('/', async (req: CustomRequest, res: Response) => {
-  try {
-    const result: QueryResult = await req.db.query('SELECT * FROM ledger_entries');
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
-  }
-});
+// Get all ledger entries
+router.get('/', (req, res) => ledgerController.getLedgerEntries(req, res));
 
-// Export the router
-export = router;
+// Get ledger entries by account
+router.get('/account/:accountId', (req, res) => ledgerController.getLedgerByAccount(req, res));
+
+// Create ledger entry
+router.post('/', (req, res) => ledgerController.createLedgerEntry(req, res));
+
+// Update ledger entry
+router.put('/:id', (req, res) => ledgerController.updateLedgerEntry(req, res));
+
+export default router;

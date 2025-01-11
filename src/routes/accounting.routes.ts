@@ -1,34 +1,31 @@
-import express, { Request, Response, Router } from 'express';
-import { Pool, QueryResult } from 'pg';
-
-// Extend Express Request type to include db
-interface CustomRequest extends Request {
-  db: Pool;
-}
+import express, { Router } from 'express';
+import { AccountingController } from '../controllers/accounting.controller';
 
 const router: Router = express.Router();
+const accountingController = new AccountingController();
 
-// Routes pour ClassePCG
-router.get('/classes', async (req: CustomRequest, res: Response) => {
-  try {
-    const result: QueryResult = await req.db.query('SELECT * FROM ClassePCG ORDER BY id');
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
-  }
-});
+// Get all accounts
+router.get('/accounts', (req, res) => accountingController.getAccounts(req, res));
 
-router.get('/classes/:id', async (req: CustomRequest, res: Response) => {
-  try {
-    const result: QueryResult = await req.db.query('SELECT * FROM ClassePCG WHERE id = $1', [req.params.id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Classe PCG non trouvée' });
-    }
-    res.json(result.rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
-  }
-});
+// Get specific account
+router.get('/accounts/:id', (req, res) => accountingController.getAccountById(req, res));
 
-// Export the router
-export = router;
+// Create account
+router.post('/accounts', (req, res) => accountingController.createAccount(req, res));
+
+// Update account
+router.put('/accounts/:id', (req, res) => accountingController.updateAccount(req, res));
+
+// Delete account
+router.delete('/accounts/:id', (req, res) => accountingController.deleteAccount(req, res));
+
+// Get account balance
+router.get('/accounts/:accountId/balance', (req, res) => accountingController.getAccountBalance(req, res));
+
+// Get account transactions
+router.get('/accounts/:accountId/transactions', (req, res) => accountingController.getAccountTransactions(req, res));
+
+// Record transaction
+router.post('/transactions', (req, res) => accountingController.recordTransaction(req, res));
+
+export default router;

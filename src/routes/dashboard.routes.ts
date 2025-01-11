@@ -1,5 +1,6 @@
 import express, { Request, Response, Router } from 'express';
 import { Pool, QueryResult } from 'pg';
+import { DashboardController } from '../controllers/dashboard.controller';
 
 // Extend Express Request type to include db
 interface CustomRequest extends Request {
@@ -7,16 +8,16 @@ interface CustomRequest extends Request {
 }
 
 const router: Router = express.Router();
+const dashboardController = new DashboardController();
 
 // Get dashboard data
-router.get('/', async (req: CustomRequest, res: Response) => {
-  try {
-    const result: QueryResult = await req.db.query('SELECT * FROM dashboard_data');
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
-  }
-});
+router.get('/', (req: CustomRequest, res: Response) => dashboardController.getDashboardData(req, res));
+
+// Get recent transactions
+router.get('/transactions', (req: CustomRequest, res: Response) => dashboardController.getRecentTransactions(req, res));
+
+// Get financial summary
+router.get('/summary', (req: CustomRequest, res: Response) => dashboardController.getFinancialSummary(req, res));
 
 // Export the router
-export = router;
+export default router;

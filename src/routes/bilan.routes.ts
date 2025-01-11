@@ -1,22 +1,13 @@
 import express, { Request, Response, Router } from 'express';
-import { Pool, QueryResult } from 'pg';
-
-// Extend Express Request type to include db
-interface CustomRequest extends Request {
-  db: Pool;
-}
+import { BilanController } from '../controllers/bilan.controller';
 
 const router: Router = express.Router();
+const bilanController = new BilanController();
 
 // Get bilan
-router.get('/', async (req: CustomRequest, res: Response) => {
-  try {
-    const result: QueryResult = await req.db.query('SELECT * FROM bilan');
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
-  }
-});
+router.get('/', (req: Request, res: Response) => bilanController.getBilan(req, res));
 
-// Export the router
-export = router;
+// Create bilan
+router.post('/', (req: Request, res: Response) => bilanController.createBilan(req, res));
+
+export default router;

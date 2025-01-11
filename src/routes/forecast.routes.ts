@@ -1,22 +1,16 @@
-import express, { Request, Response, Router } from 'express';
-import { Pool, QueryResult } from 'pg';
-
-// Extend Express Request type to include db
-interface CustomRequest extends Request {
-  db: Pool;
-}
+import express, { Router } from 'express';
+import { ForecastController } from '../controllers/forecast.controller';
 
 const router: Router = express.Router();
+const forecastController = new ForecastController();
 
-// Get forecasts
-router.get('/', async (req: CustomRequest, res: Response) => {
-  try {
-    const result: QueryResult = await req.db.query('SELECT * FROM forecasts');
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
-  }
-});
+// Get all forecasts
+router.get('/', (req, res) => forecastController.getForecasts(req, res));
 
-// Export the router
-export = router;
+// Create forecast
+router.post('/', (req, res) => forecastController.createForecast(req, res));
+
+// Update forecast
+router.put('/:id', (req, res) => forecastController.updateForecast(req, res));
+
+export default router;

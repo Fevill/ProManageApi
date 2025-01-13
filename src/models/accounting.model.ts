@@ -2,10 +2,14 @@ export interface Account {
     id: number;
     code: string;
     name: string;
-    type: AccountType;
-    description: string;
-    company_id: number;
-    parent_account_id?: number;
+    type_id: number;
+    classe_pcg_id: number;
+    parent_id?: number;
+    description?: string;
+    is_active: boolean;
+    is_auxiliaire: boolean;
+    code_pcg_reference?: string;
+    lettrage?: string;
     created_at: Date;
     updated_at: Date;
 }

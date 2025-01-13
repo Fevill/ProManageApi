@@ -5,4 +5,8 @@ export interface FiscalYear {
     company_id: number;
     created_at: Date;
     updated_at: Date;
+    name: string;
+    status: 'active' | 'closed' | 'pending';
+    notes: string;
+
 }

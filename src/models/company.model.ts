@@ -1,3 +1,5 @@
+import { FiscalYear } from './fiscalYear.model';
+
 export interface Company {
     id: number;
     name: string;
@@ -7,4 +9,5 @@ export interface Company {
     email: string;
     created_at: Date;
     updated_at: Date;
+    fiscal_years?: FiscalYear[];
 }

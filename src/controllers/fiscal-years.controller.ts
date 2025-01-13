@@ -77,4 +77,13 @@ export class FiscalYearsController {
             res.status(500).json({ error: (error as Error).message });
         }
     }
+
+    async getFiscalYearsByCompany(req: Request, res: Response): Promise<void> {
+        try {
+            const fiscalYears = await this.fiscalYearsService.getFiscalYearsByCompany(req);
+            res.json(fiscalYears);
+        } catch (error) {
+            res.status(500).json({ error: (error as Error).message });
+        }
+    }
 }

@@ -42,18 +42,45 @@ export class AccountsService {
             const { 
                 code,
                 name,
-                type,
+                type_id,
+                classe_pcg_id,
+                parent_id,
                 description,
-                company_id,
-                parent_account_id
+                is_active,
+                is_auxiliaire,
+                code_pcg_reference,
+                lettrage
             } = req.body;
 
             const result: QueryResult = await req.db.query(
-                `INSERT INTO account 
-                (code, name, type, description, company_id, parent_account_id) 
-                VALUES ($1, $2, $3, $4, $5, $6) 
-                RETURNING *`,
-                [code, name, type, description, company_id, parent_account_id]
+                `INSERT INTO account (
+                    code,
+                    name,
+                    type_id,
+                    classe_pcg_id,
+                    parent_id,
+                    description,
+                    is_active,
+                    is_auxiliaire,
+                    code_pcg_reference,
+                    lettrage,
+                    created_at,
+                    updated_at
+                ) VALUES (
+                    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                ) RETURNING *`,
+                [
+                    code,
+                    name,
+                    type_id,
+                    classe_pcg_id,
+                    parent_id,
+                    description,
+                    is_active ?? true,
+                    is_auxiliaire ?? false,
+                    code_pcg_reference,
+                    lettrage
+                ]
             );
             return result.rows[0];
         } catch (error) {
@@ -64,14 +91,48 @@ export class AccountsService {
     async updateAccount(req: CustomRequest): Promise<Account | null> {
         try {
             const id = req.params.id;
-            const { name, description, type } = req.body;
+            const {
+                code,
+                name,
+                type_id,
+                classe_pcg_id,
+                parent_id,
+                description,
+                is_active,
+                is_auxiliaire,
+                code_pcg_reference,
+                lettrage
+            } = req.body;
 
             const result: QueryResult = await req.db.query(
                 `UPDATE account
-                SET name = $1, description = $2, type = $3, updated_at = CURRENT_TIMESTAMP 
-                WHERE id = $4 
+                SET 
+                    code = $1,
+                    name = $2,
+                    type_id = $3,
+                    classe_pcg_id = $4,
+                    parent_id = $5,
+                    description = $6,
+                    is_active = $7,
+                    is_auxiliaire = $8,
+                    code_pcg_reference = $9,
+                    lettrage = $10,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = $11
                 RETURNING *`,
-                [name, description, type, id]
+                [
+                    code,
+                    name,
+                    type_id,
+                    classe_pcg_id,
+                    parent_id,
+                    description,
+                    is_active,
+                    is_auxiliaire,
+                    code_pcg_reference,
+                    lettrage,
+                    id
+                ]
             );
             return result.rows[0] || null;
         } catch (error) {
@@ -83,16 +144,6 @@ export class AccountsService {
         try {
             const id = req.params.id;
             
-            // Check if account has transactions
-            const transactionsCheck: QueryResult = await req.db.query(
-                'SELECT id FROM account_transactions WHERE account_id = $1 LIMIT 1',
-                [id]
-            );
-
-            if (transactionsCheck.rows.length > 0) {
-                throw new Error('Cannot delete account with existing transactions');
-            }
-
             const result: QueryResult = await req.db.query(
                 'DELETE FROM account WHERE id = $1 RETURNING id',
                 [id]

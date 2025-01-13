@@ -7,7 +7,7 @@ export class AccountsService {
     async getAccounts(req: CustomRequest): Promise<Account[]> {
         try {
             const companyId = req.query.companyId;
-            let query = 'SELECT * FROM accounts';
+            let query = 'SELECT * FROM account';
             const params: any[] = [];
 
             if (companyId) {
@@ -15,7 +15,7 @@ export class AccountsService {
                 params.push(companyId);
             }
 
-            query += ' ORDER BY account_number';
+            query += ' ORDER BY code';
 
             const result: QueryResult = await req.db.query(query, params);
             return result.rows;
@@ -28,7 +28,7 @@ export class AccountsService {
         try {
             const id = req.params.id;
             const result: QueryResult = await req.db.query(
-                'SELECT * FROM accounts WHERE id = $1',
+                'SELECT * FROM account WHERE id = $1',
                 [id]
             );
             return result.rows[0] || null;
@@ -40,7 +40,7 @@ export class AccountsService {
     async createAccount(req: CustomRequest): Promise<Account> {
         try {
             const { 
-                account_number,
+                code,
                 name,
                 type,
                 description,
@@ -49,11 +49,11 @@ export class AccountsService {
             } = req.body;
 
             const result: QueryResult = await req.db.query(
-                `INSERT INTO accounts 
-                (account_number, name, type, description, company_id, parent_account_id) 
+                `INSERT INTO account 
+                (code, name, type, description, company_id, parent_account_id) 
                 VALUES ($1, $2, $3, $4, $5, $6) 
                 RETURNING *`,
-                [account_number, name, type, description, company_id, parent_account_id]
+                [code, name, type, description, company_id, parent_account_id]
             );
             return result.rows[0];
         } catch (error) {
@@ -67,7 +67,7 @@ export class AccountsService {
             const { name, description, type } = req.body;
 
             const result: QueryResult = await req.db.query(
-                `UPDATE accounts 
+                `UPDATE account
                 SET name = $1, description = $2, type = $3, updated_at = CURRENT_TIMESTAMP 
                 WHERE id = $4 
                 RETURNING *`,
@@ -94,7 +94,7 @@ export class AccountsService {
             }
 
             const result: QueryResult = await req.db.query(
-                'DELETE FROM accounts WHERE id = $1 RETURNING id',
+                'DELETE FROM account WHERE id = $1 RETURNING id',
                 [id]
             );
             return result.rowCount !== null && result.rowCount > 0;

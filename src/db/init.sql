@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS accounts (
     id SERIAL PRIMARY KEY,
     company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
-    account_number VARCHAR(50),
+    code VARCHAR(50),
     type VARCHAR(50) NOT NULL, -- asset, liability, equity, etc.
     balance DECIMAL(15,2) DEFAULT 0.00,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

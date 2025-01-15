@@ -1,6 +1,6 @@
 import { Request } from 'express';
 import { Pool, QueryResult } from 'pg';
-import { Transaction } from '../models/transaction.model';
+import { Transaction, TransactionLine } from '../models/transaction.model';
 import { CustomRequest } from '../types/express';
 
 export class TransactionsService {
@@ -24,29 +24,22 @@ export class TransactionsService {
             }
 
             const query = `
-                SELECT t.*, 
-                    json_build_object(
-                        'id', da.id,
-                        'code', da.code,
-                        'name', da.name,
-                        'type_id', da.type_id,
-                        'classe_pcg_id', da.classe_pcg_id,
-                        'is_active', da.is_active,
-                        'is_auxiliaire', da.is_auxiliaire
-                    ) as debit_account,
-                    json_build_object(
-                        'id', ca.id,
-                        'code', ca.code,
-                        'name', ca.name,
-                        'type_id', ca.type_id,
-                        'classe_pcg_id', ca.classe_pcg_id,
-                        'is_active', ca.is_active,
-                        'is_auxiliaire', ca.is_auxiliaire
-                    ) as credit_account
+                SELECT t.*,
+                    COALESCE(json_agg(
+                        json_build_object(
+                            'id', tl.id,
+                            'transaction_id', tl.transaction_id,
+                            'account_id', tl.account_id,
+                            'is_debit', tl.is_debit,
+                            'amount', tl.amount,
+                            'description', tl.description,
+                            'created_at', tl.created_at
+                        ) ORDER BY tl.id
+                    ) FILTER (WHERE tl.id IS NOT NULL), '[]') as lines
                 FROM transaction t
-                LEFT JOIN account da ON t.debit_account_id = da.id
-                LEFT JOIN account ca ON t.credit_account_id = ca.id
+                LEFT JOIN transaction_lines tl ON t.id = tl.transaction_id
                 WHERE ${whereClause}
+                GROUP BY t.id
                 ORDER BY t.date DESC, t.created_at DESC
             `;
 
@@ -60,32 +53,25 @@ export class TransactionsService {
     async getTransactionById(req: CustomRequest): Promise<Transaction | null> {
         try {
             const id = req.params.id;
-            const result: QueryResult = await req.db.query(
-                `SELECT t.*, 
-                    json_build_object(
-                        'id', da.id,
-                        'code', da.code,
-                        'name', da.name,
-                        'type_id', da.type_id,
-                        'classe_pcg_id', da.classe_pcg_id,
-                        'is_active', da.is_active,
-                        'is_auxiliaire', da.is_auxiliaire
-                    ) as debit_account,
-                    json_build_object(
-                        'id', ca.id,
-                        'code', ca.code,
-                        'name', ca.name,
-                        'type_id', ca.type_id,
-                        'classe_pcg_id', ca.classe_pcg_id,
-                        'is_active', ca.is_active,
-                        'is_auxiliaire', ca.is_auxiliaire
-                    ) as credit_account
+            const query = `
+                SELECT t.*,
+                    COALESCE(json_agg(
+                        json_build_object(
+                            'id', tl.id,
+                            'transaction_id', tl.transaction_id,
+                            'account_id', tl.account_id,
+                            'is_debit', tl.is_debit,
+                            'amount', tl.amount,
+                            'description', tl.description,
+                            'created_at', tl.created_at
+                        ) ORDER BY tl.id
+                    ) FILTER (WHERE tl.id IS NOT NULL), '[]') as lines
                 FROM transaction t
-                LEFT JOIN account da ON t.debit_account_id = da.id
-                LEFT JOIN account ca ON t.credit_account_id = ca.id
-                WHERE t.id = $1`,
-                [id]
-            );
+                LEFT JOIN transaction_lines tl ON t.id = tl.transaction_id
+                WHERE t.id = $1
+                GROUP BY t.id`;
+
+            const result: QueryResult = await req.db.query(query, [id]);
             return result.rows[0] || null;
         } catch (error) {
             throw new Error(`Error fetching transaction: ${(error as Error).message}`);
@@ -93,106 +79,160 @@ export class TransactionsService {
     }
 
     async createTransaction(req: CustomRequest): Promise<Transaction> {
+        const client = await req.db.connect();
         try {
+            await client.query('BEGIN');
+
             const {
                 date,
-                amount,
                 description,
                 reference,
                 is_forecast,
                 company_id,
                 fiscal_year_id,
-                debit_account_id,
-                credit_account_id
+                lines
             } = req.body;
 
-            const result: QueryResult = await req.db.query(
+            // Créer la transaction
+            const transactionResult: QueryResult = await client.query(
                 `INSERT INTO transaction 
-                (date, amount, description, reference, is_forecast, company_id, 
-                fiscal_year_id, debit_account_id, credit_account_id) 
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+                (date, description, reference, is_forecast, company_id, fiscal_year_id) 
+                VALUES ($1, $2, $3, $4, $5, $6) 
                 RETURNING *`,
-                [date, amount, description, reference, is_forecast, company_id, 
-                fiscal_year_id, debit_account_id, credit_account_id]
+                [date, description, reference, is_forecast, company_id, fiscal_year_id]
             );
-            return result.rows[0];
+
+            const transaction = transactionResult.rows[0];
+
+            // Insérer les lignes de transaction
+            if (lines && lines.length > 0) {
+                const lineValues = lines.map((line: TransactionLine) => {
+                    return `(${transaction.id}, ${line.account_id}, ${line.is_debit}, ${line.amount}, ${line.description ? `'${line.description}'` : 'NULL'})`;
+                }).join(', ');
+
+                await client.query(`
+                    INSERT INTO transaction_lines 
+                    (transaction_id, account_id, is_debit, amount, description)
+                    VALUES ${lineValues}
+                `);
+            }
+
+            await client.query('COMMIT');
+            req.params = { id: transaction.id };
+            const createdTransaction = await this.getTransactionById(req);
+            if (!createdTransaction) {
+                throw new Error('Transaction was created but could not be retrieved');
+            }
+            return createdTransaction;
         } catch (error) {
+            await client.query('ROLLBACK');
             throw new Error(`Error creating transaction: ${(error as Error).message}`);
+        } finally {
+            client.release();
         }
     }
 
     async updateTransaction(req: CustomRequest): Promise<Transaction | null> {
+        const client = await req.db.connect();
         try {
+            await client.query('BEGIN');
+
             const id = req.params.id;
             const {
                 date,
-                amount,
                 description,
                 reference,
                 is_forecast,
-                debit_account_id,
-                credit_account_id
+                lines
             } = req.body;
 
-            const result: QueryResult = await req.db.query(
+            // Mettre à jour la transaction
+            await client.query(
                 `UPDATE transaction 
-                SET date = $1, amount = $2, description = $3, reference = $4, 
-                    is_forecast = $5, debit_account_id = $6, credit_account_id = $7,
+                SET date = $1, description = $2, reference = $3, is_forecast = $4,
                     updated_at = CURRENT_TIMESTAMP 
-                WHERE id = $8 
-                RETURNING *`,
-                [date, amount, description, reference, is_forecast, 
-                debit_account_id, credit_account_id, id]
+                WHERE id = $5`,
+                [date, description, reference, is_forecast, id]
             );
-            return result.rows[0] || null;
+
+            // Supprimer les anciennes lignes
+            await client.query('DELETE FROM transaction_lines WHERE transaction_id = $1', [id]);
+
+            // Insérer les nouvelles lignes
+            if (lines && lines.length > 0) {
+                const lineValues = lines.map((line: TransactionLine) => {
+                    return `(${id}, ${line.account_id}, ${line.is_debit}, ${line.amount}, ${line.description ? `'${line.description}'` : 'NULL'})`;
+                }).join(', ');
+
+                await client.query(`
+                    INSERT INTO transaction_lines 
+                    (transaction_id, account_id, is_debit, amount, description)
+                    VALUES ${lineValues}
+                `);
+            }
+
+            await client.query('COMMIT');
+            req.params = { id };
+            return this.getTransactionById(req);
         } catch (error) {
+            await client.query('ROLLBACK');
             throw new Error(`Error updating transaction: ${(error as Error).message}`);
+        } finally {
+            client.release();
         }
     }
 
     async deleteTransaction(req: CustomRequest): Promise<boolean> {
+        const client = await req.db.connect();
         try {
+            await client.query('BEGIN');
+
             const id = req.params.id;
-            const result: QueryResult = await req.db.query(
+            // Supprimer d'abord les lignes de transaction
+            await client.query('DELETE FROM transaction_lines WHERE transaction_id = $1', [id]);
+            // Puis supprimer la transaction
+            const result: QueryResult = await client.query(
                 'DELETE FROM transaction WHERE id = $1 RETURNING id',
                 [id]
             );
+
+            await client.query('COMMIT');
             return result.rowCount !== null && result.rowCount > 0;
         } catch (error) {
+            await client.query('ROLLBACK');
             throw new Error(`Error deleting transaction: ${(error as Error).message}`);
+        } finally {
+            client.release();
         }
     }
 
     async getTransactionsByAccount(req: CustomRequest): Promise<Transaction[]> {
         try {
             const accountId = req.params.accountId;
-            const result: QueryResult = await req.db.query(
-                `SELECT t.*, 
-                    json_build_object(
-                        'id', da.id,
-                        'code', da.code,
-                        'name', da.name,
-                        'type_id', da.type_id,
-                        'classe_pcg_id', da.classe_pcg_id,
-                        'is_active', da.is_active,
-                        'is_auxiliaire', da.is_auxiliaire
-                    ) as debit_account,
-                    json_build_object(
-                        'id', ca.id,
-                        'code', ca.code,
-                        'name', ca.name,
-                        'type_id', ca.type_id,
-                        'classe_pcg_id', ca.classe_pcg_id,
-                        'is_active', ca.is_active,
-                        'is_auxiliaire', ca.is_auxiliaire
-                    ) as credit_account
+            const query = `
+                SELECT DISTINCT t.*,
+                    COALESCE(json_agg(
+                        json_build_object(
+                            'id', tl.id,
+                            'transaction_id', tl.transaction_id,
+                            'account_id', tl.account_id,
+                            'is_debit', tl.is_debit,
+                            'amount', tl.amount,
+                            'description', tl.description,
+                            'created_at', tl.created_at
+                        ) ORDER BY tl.id
+                    ) FILTER (WHERE tl.id IS NOT NULL), '[]') as lines
                 FROM transaction t
-                LEFT JOIN account da ON t.debit_account_id = da.id
-                LEFT JOIN account ca ON t.credit_account_id = ca.id
-                WHERE t.debit_account_id = $1 OR t.credit_account_id = $1
-                ORDER BY t.date DESC, t.created_at DESC`,
-                [accountId]
-            );
+                LEFT JOIN transaction_lines tl ON t.id = tl.transaction_id
+                WHERE EXISTS (
+                    SELECT 1 FROM transaction_lines tl2 
+                    WHERE tl2.transaction_id = t.id 
+                    AND tl2.account_id = $1
+                )
+                GROUP BY t.id
+                ORDER BY t.date DESC, t.created_at DESC`;
+
+            const result: QueryResult = await req.db.query(query, [accountId]);
             return result.rows;
         } catch (error) {
             throw new Error(`Error fetching transactions by account: ${(error as Error).message}`);
@@ -204,10 +244,10 @@ export class TransactionsService {
             const accountId = req.params.accountId;
             const result: QueryResult = await req.db.query(
                 `SELECT 
-                    COALESCE(SUM(CASE WHEN debit_account_id = $1 THEN amount ELSE 0 END), 0) -
-                    COALESCE(SUM(CASE WHEN credit_account_id = $1 THEN amount ELSE 0 END), 0) as balance
-                FROM transaction
-                WHERE debit_account_id = $1 OR credit_account_id = $1`,
+                    COALESCE(SUM(CASE WHEN tl.account_id = $1 AND tl.is_debit THEN tl.amount ELSE 0 END), 0) -
+                    COALESCE(SUM(CASE WHEN tl.account_id = $1 AND NOT tl.is_debit THEN tl.amount ELSE 0 END), 0) as balance
+                FROM transaction_lines tl
+                WHERE tl.account_id = $1`,
                 [accountId]
             );
             return { balance: parseFloat(result.rows[0].balance) };

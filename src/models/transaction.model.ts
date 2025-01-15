@@ -1,9 +1,16 @@
+export interface TransactionLine {
+    id: number;
+    transaction_id: number;
+    account_id: number;
+    is_debit: boolean;
+    amount: number;
+    description?: string;
+    created_at: Date;
+}
+
 export interface Transaction {
     id: number;
     date: Date;
-    amount: number;
-    debit_account_id: number;
-    credit_account_id: number;
     description: string;
     reference?: string;
     company_id: number;
@@ -11,4 +18,5 @@ export interface Transaction {
     is_forecast: boolean;
     created_at: Date;
     updated_at: Date;
+    lines?: TransactionLine[];
 }

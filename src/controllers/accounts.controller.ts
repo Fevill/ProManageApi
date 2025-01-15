@@ -1,4 +1,5 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { CustomRequest } from '../types/express';
 import { AccountsService } from '../services/accounts.service';
 
 export class AccountsController {
@@ -8,7 +9,7 @@ export class AccountsController {
         this.accountsService = new AccountsService();
     }
 
-    async getAccounts(req: Request, res: Response): Promise<void> {
+    async getAccounts(req: CustomRequest, res: Response): Promise<void> {
         try {
             const accounts = await this.accountsService.getAccounts(req);
             res.json(accounts);
@@ -17,7 +18,7 @@ export class AccountsController {
         }
     }
 
-    async getAccountById(req: Request, res: Response): Promise<void> {
+    async getAccountById(req: CustomRequest, res: Response): Promise<void> {
         try {
             const account = await this.accountsService.getAccountById(req);
             if (account) {
@@ -30,7 +31,7 @@ export class AccountsController {
         }
     }
 
-    async createAccount(req: Request, res: Response): Promise<void> {
+    async createAccount(req: CustomRequest, res: Response): Promise<void> {
         try {
             const newAccount = await this.accountsService.createAccount(req);
             res.status(201).json(newAccount);
@@ -39,7 +40,7 @@ export class AccountsController {
         }
     }
 
-    async updateAccount(req: Request, res: Response): Promise<void> {
+    async updateAccount(req: CustomRequest, res: Response): Promise<void> {
         try {
             const updatedAccount = await this.accountsService.updateAccount(req);
             if (updatedAccount) {
@@ -52,7 +53,7 @@ export class AccountsController {
         }
     }
 
-    async deleteAccount(req: Request, res: Response): Promise<void> {
+    async deleteAccount(req: CustomRequest, res: Response): Promise<void> {
         try {
             const deleted = await this.accountsService.deleteAccount(req);
             if (deleted) {
@@ -65,7 +66,7 @@ export class AccountsController {
         }
     }
 
-    async getAccountBalance(req: Request, res: Response): Promise<void> {
+    async getAccountBalance(req: CustomRequest, res: Response): Promise<void> {
         try {
             const balance = await this.accountsService.getAccountBalance(req);
             res.json(balance);
@@ -74,7 +75,7 @@ export class AccountsController {
         }
     }
 
-    async getAccountTransactions(req: Request, res: Response): Promise<void> {
+    async getAccountTransactions(req: CustomRequest, res: Response): Promise<void> {
         try {
             const transactions = await this.accountsService.getAccountTransactions(req);
             res.json(transactions);
@@ -83,7 +84,7 @@ export class AccountsController {
         }
     }
 
-    async recordTransaction(req: Request, res: Response): Promise<void> {
+    async recordTransaction(req: CustomRequest, res: Response): Promise<void> {
         try {
             const transaction = await this.accountsService.recordTransaction(req);
             res.status(201).json(transaction);

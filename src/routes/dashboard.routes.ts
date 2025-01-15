@@ -1,11 +1,6 @@
-import express, { Request, Response, Router } from 'express';
-import { Pool, QueryResult } from 'pg';
+import express, { Router, Request, Response } from 'express';
 import { DashboardController } from '../controllers/dashboard.controller';
-
-// Extend Express Request type to include db
-interface CustomRequest extends Request {
-  db: Pool;
-}
+import { CustomRequest } from '../types/express';
 
 const router: Router = express.Router();
 const dashboardController = new DashboardController();
@@ -19,5 +14,7 @@ router.get('/transactions', (req: CustomRequest, res: Response) => dashboardCont
 // Get financial summary
 router.get('/summary', (req: CustomRequest, res: Response) => dashboardController.getFinancialSummary(req, res));
 
-// Export the router
+// Get bank accounts
+router.get('/bank-accounts', (req: CustomRequest, res: Response) => dashboardController.getBankAccounts(req, res));
+
 export default router;

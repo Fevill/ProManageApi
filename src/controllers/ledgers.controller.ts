@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import { LedgersService } from '../services/ledgers.service';
+import { LedgerFilter, LedgersService } from '../services/ledgers.service';
+import { CustomRequest } from '../types/express';
 
 export class LedgerController {
     private ledgersService: LedgersService;
@@ -10,39 +11,16 @@ export class LedgerController {
 
     async getLedgerEntries(req: Request, res: Response): Promise<void> {
         try {
-            const entries = await this.ledgersService.getLedgerEntries(req);
+            const filters: LedgerFilter = {
+                startDate: req.query.startDate as string,
+                endDate: req.query.endDate as string,
+                accountId: req.query.accountId ? Number(req.query.accountId) : undefined,
+                companyId: req.query.companyId ? Number(req.query.companyId) : undefined,
+                fiscalYearId: req.query.fiscalYearId ? Number(req.query.fiscalYearId) : undefined,
+                isForecast: req.query.isForecast === 'true'
+            };
+            const entries = await this.ledgersService.getLedger(req as CustomRequest, filters);
             res.json(entries);
-        } catch (error) {
-            res.status(500).json({ error: (error as Error).message });
-        }
-    }
-
-    async getLedgerByAccount(req: Request, res: Response): Promise<void> {
-        try {
-            const entries = await this.ledgersService.getLedgerByAccount(req);
-            res.json(entries);
-        } catch (error) {
-            res.status(500).json({ error: (error as Error).message });
-        }
-    }
-
-    async createLedgerEntry(req: Request, res: Response): Promise<void> {
-        try {
-            const newEntry = await this.ledgersService.createLedgerEntry(req);
-            res.status(201).json(newEntry);
-        } catch (error) {
-            res.status(500).json({ error: (error as Error).message });
-        }
-    }
-
-    async updateLedgerEntry(req: Request, res: Response): Promise<void> {
-        try {
-            const updatedEntry = await this.ledgersService.updateLedgerEntry(req);
-            if (updatedEntry) {
-                res.json(updatedEntry);
-            } else {
-                res.status(404).json({ message: 'Ledger entry not found' });
-            }
         } catch (error) {
             res.status(500).json({ error: (error as Error).message });
         }

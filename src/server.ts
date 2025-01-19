@@ -58,7 +58,7 @@ app.use('/api/companies', companiesRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/fiscal-years', fiscalYearsRoutes);
 app.use('/api/forecasts', forecastsRoutes);
-app.use('/api/ledgers', ledgersRoutes);
+app.use('/api/ledger', ledgersRoutes);
 app.use('/api/profiles', profilesRoutes);
 app.use('/api/projects', projectsRoutes);
 app.use('/api/resultats', resultatsRoutes);

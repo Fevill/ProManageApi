@@ -9,46 +9,33 @@ export class BilansController {
     this.bilansService = new BilansService();
   }
 
-  async getBilans(req: CustomRequest, res: Response) {
+  async getBilan(req: CustomRequest, res: Response): Promise<void> {
     try {
       const { companyId, fiscalYearId } = req.query;
       
       if (!companyId || !fiscalYearId) {
-        return res.status(400).json({ error: 'Company ID and Fiscal Year ID are required' });
+        res.status(400).json({ error: 'Company ID and Fiscal Year ID are required' });
+        return;
       }
 
-      // TODO: Implement bilan logic
-      const bilans = await this.bilansService.getAllBilans(req);
-      
-      res.json(bilans);
-    } catch (error) {
-      console.error('Error in getBilans:', error);
-      res.status(500).json({ error: 'Failed to retrieve bilans' });
-    }
-  }
-
-  async getBilanById(req: CustomRequest, res: Response) {
-    try {
-      const { id } = req.params;
-      
-      // TODO: Implement get bilan by ID logic
-      const bilan = await this.bilansService.getBilanById(req);
-      
-      if (!bilan) {
-        return res.status(404).json({ error: 'Bilan not found' });
-      }
-      
+      const bilan = await this.bilansService.getBilan(req);
       res.json(bilan);
     } catch (error) {
-      console.error('Error in getBilanById:', error);
-      res.status(500).json({ error: 'Failed to retrieve bilan' });
+      res.status(500).json({ error: (error as Error).message });
     }
   }
 
-  async createBilan(req: CustomRequest, res: Response) {
+  async getBilanComparison(req: CustomRequest, res: Response): Promise<void> {
     try {
-      const newBilan = await this.bilansService.createBilan(req);
-      res.status(201).json(newBilan);
+      const { companyId, fiscalYearId } = req.query;
+      
+      if (!companyId || !fiscalYearId) {
+        res.status(400).json({ error: 'Company ID and Fiscal Year ID are required' });
+        return;
+      }
+
+      const comparison = await this.bilansService.getBilanComparison(req);
+      res.json(comparison);
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
     }

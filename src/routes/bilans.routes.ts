@@ -1,16 +1,13 @@
-import express from 'express';
+import express, { Router } from 'express';
 import { BilansController } from '../controllers/bilans.controller';
 
-const router = express.Router();
-const controller = new BilansController();
+const router: Router = express.Router();
+const bilansController = new BilansController();
 
-// GET /api/bilans
-router.get('/', controller.getBilans.bind(controller));
+// Get bilan for a specific company and fiscal year
+router.get('/', (req, res) => bilansController.getBilan(req, res));
 
-// GET /api/bilans/:id
-router.get('/:id', controller.getBilanById.bind(controller));
-
-// POST /api/bilans
-router.post('/', controller.createBilan.bind(controller));
+// Get bilan comparison with previous fiscal year
+router.get('/comparison', (req, res) => bilansController.getBilanComparison(req, res));
 
 export default router;

@@ -13,4 +13,7 @@ router.get('/company/:companyId', (req, res) => resultatController.getResultatBy
 // Get resultat by period
 router.get('/period', (req, res) => resultatController.getResultatByPeriod(req, res));
 
+// Get resultat by fiscal year
+router.get('/fiscal-year', (req, res) => resultatController.getResultatByFiscalYear(req, res));
+
 export default router;

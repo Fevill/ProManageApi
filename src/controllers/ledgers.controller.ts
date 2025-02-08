@@ -16,8 +16,7 @@ export class LedgerController {
                 endDate: req.query.endDate as string,
                 accountId: req.query.accountId ? Number(req.query.accountId) : undefined,
                 companyId: req.query.companyId ? Number(req.query.companyId) : undefined,
-                fiscalYearId: req.query.fiscalYearId ? Number(req.query.fiscalYearId) : undefined,
-                isForecast: req.query.isForecast === 'true'
+                fiscalYearId: req.query.fiscalYearId ? Number(req.query.fiscalYearId) : undefined
             };
             const entries = await this.ledgersService.getLedger(req as CustomRequest, filters);
             res.json(entries);

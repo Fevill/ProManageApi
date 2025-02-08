@@ -8,7 +8,6 @@ export class DashboardService {
         try {
             const companyId = req.query.companyId;
             const fiscalYearId = req.query.fiscalYearId;
-            const isForecast = req.query.isForecast === 'true';
 
             if (!companyId || !fiscalYearId) {
                 throw new Error('Company ID and Fiscal Year ID are required');
@@ -23,10 +22,9 @@ export class DashboardService {
                 JOIN transaction_lines tl ON t.id = tl.transaction_id 
                 WHERE t.company_id = $1 
                     AND t.fiscal_year_id = $2
-                    AND t.is_forecast = $3
             `;
 
-            const result: QueryResult = await req.db.query(query, [companyId, fiscalYearId, isForecast]);
+            const result: QueryResult = await req.db.query(query, [companyId, fiscalYearId]);
             return result.rows[0];
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
@@ -38,7 +36,6 @@ export class DashboardService {
         try {
             const companyId = req.query.companyId;
             const fiscalYearId = req.query.fiscalYearId;
-            const isForecast = req.query.isForecast === 'true';
 
             if (!companyId || !fiscalYearId) {
                 throw new Error('Company ID and Fiscal Year ID are required');
@@ -56,12 +53,11 @@ export class DashboardService {
                 JOIN account a ON tl.account_id = a.id
                 WHERE t.company_id = $1 
                     AND t.fiscal_year_id = $2
-                    AND t.is_forecast = $3
                 ORDER BY t.date DESC
                 LIMIT 10
             `;
 
-            const result: QueryResult = await req.db.query(query, [companyId, fiscalYearId, isForecast]);
+            const result: QueryResult = await req.db.query(query, [companyId, fiscalYearId]);
             return result.rows;
         } catch (error) {
             console.error('Error fetching recent transactions:', error);
@@ -73,7 +69,6 @@ export class DashboardService {
         try {
             const companyId = req.query.companyId;
             const fiscalYearId = req.query.fiscalYearId;
-            const isForecast = req.query.isForecast === 'true';
 
             if (!companyId || !fiscalYearId) {
                 throw new Error('Company ID and Fiscal Year ID are required');
@@ -89,10 +84,9 @@ export class DashboardService {
                 JOIN transaction_lines tl ON t.id = tl.transaction_id
                 WHERE t.company_id = $1 
                     AND t.fiscal_year_id = $2
-                    AND t.is_forecast = $3
             `;
 
-            const result: QueryResult = await req.db.query(query, [companyId, fiscalYearId, isForecast]);
+            const result: QueryResult = await req.db.query(query, [companyId, fiscalYearId]);
             return result.rows[0];
         } catch (error) {
             console.error('Error fetching financial summary:', error);
@@ -104,7 +98,6 @@ export class DashboardService {
         try {
             const companyId = req.query.companyId;
             const fiscalYearId = req.query.fiscalYearId;
-            const isForecast = req.query.isForecast === 'true';
 
             if (!companyId || !fiscalYearId) {
                 throw new Error('Company ID and Fiscal Year ID are required');
@@ -130,12 +123,11 @@ export class DashboardService {
                 WHERE c.code_pcg_reference LIKE '512%'
                     AND (t.company_id = $1 OR t.company_id IS NULL)
                     AND (t.fiscal_year_id = $2 OR t.fiscal_year_id IS NULL)
-                    AND (t.is_forecast = $3 OR t.is_forecast IS NULL)
                 GROUP BY c.id, c.code_pcg_reference, c.name, c.description, c.code
                 ORDER BY c.code ASC
             `;
 
-            const result: QueryResult = await req.db.query(query, [companyId, fiscalYearId, isForecast]);
+            const result: QueryResult = await req.db.query(query, [companyId, fiscalYearId]);
             return result.rows;
         } catch (error) {
             console.error('Error fetching bank accounts:', error);

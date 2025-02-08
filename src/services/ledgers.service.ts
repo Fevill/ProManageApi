@@ -9,7 +9,6 @@ export interface LedgerEntry {
     debit: number;
     credit: number;
     balance: number;
-    isForecast?: boolean;
     lettrage?: string;
 }
 
@@ -33,7 +32,6 @@ export interface LedgerFilter {
     accountId?: number;
     companyId?: number;
     fiscalYearId?: number;
-    isForecast?: boolean;
     isAuxiliaire?: boolean;
     typeId?: number;
     classePcgId?: number;
@@ -100,7 +98,6 @@ export class LedgersService {
                         a.is_auxiliaire,
                         a.code_pcg_reference,
                         a.lettrage,
-                        t.is_forecast,
                         fy.status as fiscal_year_status
                     FROM transaction t
                     INNER JOIN transaction_lines tl ON t.id = tl.transaction_id
@@ -110,7 +107,6 @@ export class LedgersService {
                     ${filters.fiscalYearId ? 'AND t.fiscal_year_id = $2' : ''}
                     ${filters.startDate ? 'AND t.date >= $3' : ''}
                     ${filters.endDate ? 'AND t.date <= $4' : ''}
-                    ${!filters.isForecast ? 'AND NOT t.is_forecast' : ''}
                     ORDER BY t.date ASC, t.id ASC
                 )
                 SELECT 
@@ -127,7 +123,6 @@ export class LedgersService {
                     COALESCE(transaction_description, line_description) as description,
                     CASE WHEN is_debit THEN amount ELSE 0 END as debit,
                     CASE WHEN NOT is_debit THEN amount ELSE 0 END as credit,
-                    is_forecast,
                     fiscal_year_status
                 FROM transactions_with_lines
                 ORDER BY date ASC, transaction_id ASC;
@@ -183,7 +178,6 @@ export class LedgersService {
                     debit,
                     credit,
                     balance: account.balance,
-                    isForecast: row.is_forecast,
                     lettrage: row.lettrage
                 });
             }

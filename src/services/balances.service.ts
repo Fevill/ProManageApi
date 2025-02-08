@@ -12,7 +12,7 @@ export class BalancesService {
                 startDate,
                 endDate,
                 accountId,
-                isForecast
+                
             } = req.query;
 
             const params: any[] = [companyId];
@@ -60,10 +60,6 @@ export class BalancesService {
                 params.push(endDate);
             }
 
-            if (typeof isForecast === 'boolean') {
-                query += ` AND t.is_forecast = $${++paramCount}`;
-                params.push(isForecast);
-            }
 
             query += `
                 )

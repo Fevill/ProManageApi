@@ -6,16 +6,15 @@ import { CustomRequest } from '../types/express';
 export class TransactionsService {
     async getAllTransactions(req: CustomRequest): Promise<Transaction[]> {
         try {
-            const isForecast: boolean = req.query.forecast ? String(req.query.forecast).toLowerCase() === 'true' : false;
             const companyId = req.query.companyId;
             const fiscalYearId = req.query.fiscalYearId;
 
-            let params: any[] = [isForecast];
-            let whereClause = 't.is_forecast = $1';
+            let params: any[] = [];
+            let whereClause = '';
 
             if (companyId) {
                 params.push(companyId);
-                whereClause += ` AND t.company_id = $${params.length}`;
+                whereClause += `t.company_id = $${params.length}`;
             }
 
             if (fiscalYearId) {
@@ -87,7 +86,6 @@ export class TransactionsService {
                 date,
                 description,
                 reference,
-                is_forecast,
                 company_id,
                 fiscal_year_id,
                 lines
@@ -96,10 +94,10 @@ export class TransactionsService {
             // Créer la transaction
             const transactionResult: QueryResult = await client.query(
                 `INSERT INTO transaction 
-                (date, description, reference, is_forecast, company_id, fiscal_year_id) 
+                (date, description, reference, company_id, fiscal_year_id) 
                 VALUES ($1, $2, $3, $4, $5, $6) 
                 RETURNING *`,
-                [date, description, reference, is_forecast, company_id, fiscal_year_id]
+                [date, description, reference, company_id, fiscal_year_id]
             );
 
             const transaction = transactionResult.rows[0];
@@ -142,17 +140,16 @@ export class TransactionsService {
                 date,
                 description,
                 reference,
-                is_forecast,
                 lines
             } = req.body;
 
             // Mettre à jour la transaction
             await client.query(
                 `UPDATE transaction 
-                SET date = $1, description = $2, reference = $3, is_forecast = $4,
+                SET date = $1, description = $2, reference = $3,
                     updated_at = CURRENT_TIMESTAMP 
                 WHERE id = $5`,
-                [date, description, reference, is_forecast, id]
+                [date, description, reference, id]
             );
 
             // Supprimer les anciennes lignes
